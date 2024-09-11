@@ -32,6 +32,7 @@ Este sistema se integra fácilmente con cualquier bot de Discord, permitiendo qu
 - `POST /giveaway/:id/end`: Finalizar un sorteo manualmente antes de tiempo.
 - `GET /giveaway/:id`: Obtener información detallada de un sorteo específico.
 - `GET /guild/:id`: Obtener información de los sorteos en un servidor.
+   - `?active=true`: Obtener los sorteos activos
 
 ## Tecnologías Utilizadas 🚀
 

@@ -101,9 +101,10 @@ app.get("/giveaway/:id", async (req, res) => {
 
 app.get('/guild/:id', async (req, res) => {
   const { id } = req.params
+  const { active } = req.query
   try {
-    const guild = await prisma.giveaway.findFirst({
-      where: { guild: id },
+    const guild = await prisma.giveaway.findMany({
+      where: { guild: id, active: Boolean(active) },
     });
 
     if (!guild) {
@@ -162,7 +163,7 @@ async function finishGiveaway(giveawayId: string) {
 
   if (giveaway && giveaway.active) {
     const winner = getWinners(giveaway)
-      
+
 
     await prisma.giveaway.update({
       where: { id: parseInt(giveawayId) },
@@ -174,11 +175,11 @@ async function finishGiveaway(giveawayId: string) {
     const msg = `El ganador del sorteo es ${winners.join()}, has ganado \`${giveaway.prize}\` !!`
 
     try {
-      axios.post(`https://discord.com/api/channels/${giveaway.channel}/messages`,{content: msg}, {
+      axios.post(`https://discord.com/api/channels/${giveaway.channel}/messages`, { content: msg }, {
         headers: {
           Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
-          "User-Agent":"myBotThing (http://some.url, v0.1)",
-          "Content-Type":"application/json"
+          "User-Agent": "myBotThing (http://some.url, v0.1)",
+          "Content-Type": "application/json"
         },
       })
     } catch (error) {
