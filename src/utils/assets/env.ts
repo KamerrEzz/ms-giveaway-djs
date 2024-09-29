@@ -18,6 +18,11 @@ export const web = {
     port: getEnv("PORT", "number") || 3000
 }
 
+export const api = {
+    user: getEnv("USER_SECRET"),
+    password: getEnv("PASSWORD_SECRET"),
+}
+
 export function getEnv<T extends "string" | "number" | undefined = undefined>(
     key: string,
     type?: T

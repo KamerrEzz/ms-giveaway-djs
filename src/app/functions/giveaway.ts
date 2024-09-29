@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { prisma } from "../../prismaClient";
 import giveawayQueue from "../../utils/services/giveawayQueue";
 import { Giveaway as Give } from "@prisma/client"
@@ -15,21 +15,21 @@ export default new class Giveaway {
             });
 
             if (!guild) {
-                return res.status(404).json({ error: "Servidor no encontrado" });
+                res.status(404).json({ error: "Servidor no encontrado" });
             }
 
-            return res.status(200).json(guild);
+            res.status(200).json(guild);
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ error: "Error al obtener el servidor" });
+            res.status(500).json({ error: "Error al obtener el servidor" });
         }
     }
 
-    async post(req: Request, res: Response) {
+    async post(req: Request, res: Response, next: NextFunction) {
         const { channel, users, prize, time, guild, winners } = req.body;
 
         if (!channel || !users || !prize || !time || !guild) {
-            return res.status(400).json({ error: "Faltan datos requeridos" });
+            res.status(400).json({ error: "Faltan datos requeridos" });
         }
 
         try {
@@ -51,10 +51,10 @@ export default new class Giveaway {
                 { delay: time, removeOnComplete: true }
             );
 
-            return res.status(201).json({ message: "Sorteo creado", giveaway });
+            res.status(201).json({ message: "Sorteo creado", giveaway });
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ error: "Error al crear el sorteo" });
+            res.status(500).json({ error: "Error al crear el sorteo" });
         }
     }
 
@@ -67,9 +67,10 @@ export default new class Giveaway {
             });
 
             if (!giveaway || !giveaway.active) {
-                return res
-                    .status(404)
-                    .json({ error: "Sorteo no encontrado o ya finalizado" });
+                res
+                .status(404)
+                .json({ error: "Sorteo no encontrado o ya finalizado" });
+                return;
             }
 
             await this.finish(giveaway.id);
@@ -79,10 +80,10 @@ export default new class Giveaway {
                 await job.remove();
             }
 
-            return res.status(200).json({ message: "Sorteo finalizado manualmente" });
+            res.status(200).json({ message: "Sorteo finalizado manualmente" });
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ error: "Error al finalizar el sorteo" });
+            res.status(500).json({ error: "Error al finalizar el sorteo" });
         }
     }
 

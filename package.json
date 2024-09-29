@@ -17,6 +17,7 @@
     "generate": "prisma generate"
   },
   "dependencies": {
+    "@hapi/boom": "^10.0.1",
     "@prisma/client": "^5.20.0",
     "@types/node": "^22",
     "axios": "^1.7.7",
