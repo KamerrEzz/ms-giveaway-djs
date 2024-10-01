@@ -14,7 +14,9 @@ const worker = new Worker<Giveaway>("giveawey", async (job) => {
     if (giveawa && giveawa.active) {
         await giveaway.finish(id);
     }
-}, { connection })
+}, {
+    connection
+})
 
 worker.on('completed', (job) => {
     console.log(`Completado ${job.id}`);

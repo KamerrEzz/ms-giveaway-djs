@@ -10,8 +10,6 @@ export default function () {
         .use(bodyParser.json())
         .use(security);
 
-
-
     giveaway(client)
     
     client.all("/", (req, res) => {
