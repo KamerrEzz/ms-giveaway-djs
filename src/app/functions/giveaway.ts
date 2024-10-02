@@ -3,6 +3,7 @@ import { prisma } from "../../prismaClient";
 import giveawayQueue from "../../utils/services/giveawayQueue";
 import { Giveaway as Give } from "@prisma/client"
 import axios from "../../utils/services/axios";
+import logger from "../../utils/services/logger";
 
 export default new class Giveaway {
 
@@ -26,11 +27,9 @@ export default new class Giveaway {
     }
 
     async post(req: Request, res: Response, next: NextFunction) {
-        const { channel, users, prize, time, guild, winners } = req.body;
+        const { channel, users, prize, endTime, guild, winnersCount } = req.body;
 
-        if (!channel || !users || !prize || !time || !guild) {
-            res.status(400).json({ error: "Faltan datos requeridos" });
-        }
+        const time = new Date(endTime);
 
         try {
             const giveaway = await prisma.giveaway.create({
@@ -38,20 +37,20 @@ export default new class Giveaway {
                     channel,
                     users,
                     prize,
-                    endTime: new Date(Date.now() + time),
+                    endTime: time,
                     guild,
                     active: true,
-                    winnersCount: winners
+                    winnersCount
                 },
             });
 
             await giveawayQueue.add(
                 "giveaway",
                 giveaway,
-                { delay: time, removeOnComplete: true }
+                { delay: time.getTime() - Date.now(), removeOnComplete: true }
             );
 
-            res.status(201).json({ message: "Sorteo creado", giveaway });
+            res.status(200).json({ message: "Sorteo creado", giveaway });
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: "Error al crear el sorteo" });
@@ -84,6 +83,18 @@ export default new class Giveaway {
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: "Error al finalizar el sorteo" });
+            return;
+        }
+    }
+
+    async put(req: Request<{id: string}, any,Partial<Give>>, res: Response){
+        const { id } = req.params;
+        let { channel, users, prize, guild, winnersCount } = req.body;
+
+        try {
+            
+        } catch (error) {
+            
         }
     }
 
@@ -106,10 +117,10 @@ export default new class Giveaway {
             const msg = `El ganador del sorteo es ${winners.join()}, has ganado \`${giveaway.prize}\` !!`
 
             try {
-                await axios.post(`channels/${giveaway.channel}/messages`, { content: msg });
+                await axios.post(`channels/${giveaway.channel}/messages`, JSON.stringify({ content: msg }));
             } catch (error) {
                 if (error instanceof Error) {
-                    console.error(error.message);
+                    logger.errorWithType("Axios", error.stack || error.message);
                 }
             }
         }

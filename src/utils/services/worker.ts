@@ -1,10 +1,11 @@
 import { Worker } from "bullmq";
-import { redis as connection } from "../assets/env";
 import { prisma } from "../../prismaClient";
 import giveaway from "../../app/functions/giveaway";
 import { Giveaway } from "@prisma/client";
+import logger from "./logger";
+import redis from "./redis";
 
-const worker = new Worker<Giveaway>("giveawey", async (job) => {
+export default new Worker<Giveaway>("giveawey", async (job) => {
     const { id } = job.data;
 
     const giveawa = await prisma.giveaway.findUnique({
@@ -15,15 +16,13 @@ const worker = new Worker<Giveaway>("giveawey", async (job) => {
         await giveaway.finish(id);
     }
 }, {
-    connection
-})
-
-worker.on('completed', (job) => {
-    console.log(`Completado ${job.id}`);
-})
-
-worker.on('failed', (job, err) => {
-    console.log(`Fallo ${job?.id}`, err)
-})
-
-export default worker;
+    connection:redis
+}).on('completed', (job) => {
+    logger.infoWithType("Giveaway", `Completado ${job.id}`);
+}).on("error", (err)=>{
+    logger.errorWithType("Giveaway", err.message)
+}).on("ready", ()=>{
+    logger.infoWithType("Giveaway", `Listo`)
+}).on('failed', (job, err) => {
+    logger.errorWithType("Giveaway", `Fallo ${job?.id} ${err}`)
+});

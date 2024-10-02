@@ -1,5 +1,9 @@
 import { Giveaway } from "@prisma/client";
 import { Queue } from "bullmq";
-import { redis as connection } from "../assets/env";
 
-export default new Queue<Giveaway>("giveawey", { connection } );
+import logger from "./logger";
+import redis from "./redis";
+
+export default new Queue<Giveaway>("giveawey", { connection: redis } ).on("error", (err)=>{
+    logger.errorWithType("GiveawayQueue", err.message)
+});
