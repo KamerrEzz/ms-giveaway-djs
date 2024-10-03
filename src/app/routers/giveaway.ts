@@ -8,5 +8,7 @@ export default function(client: Express){
     .post("/giveaway", joiValidated("body", GiveawayPost), giveaway.post)
     .get("/giveaway/:id", giveaway.get)
     .put("/giveaway/:id", joiValidated("body", GiveawayPut), giveaway.put)
+    .post("/giveaway/:id/pause", giveaway.pause)
+    .post("/giveaway/:id/reopen", giveaway.reOpen)
     .post("/giveaway/:id/end", giveaway.end)
 }

@@ -1,6 +1,5 @@
 import assert from "assert";
 import axios from "./axios";
-import { array } from "joi";
 
 
 describe("Test Giveaway", () => {
@@ -8,15 +7,14 @@ describe("Test Giveaway", () => {
 
     it("Create a giveaway", async () => {
         try {
-            const date = new Date();
-            date.setMinutes(date.getMinutes() + 1);
             const response = await axios.post("/giveaway", {
                guild: "739306480586588241",
                channel: "921170433800294460",
-               prize: "dona",
+               prize: "rol dos",
                winnersCount: 1,
-               endTime: date.toISOString(),
+               delay: 60*1,
                users: ["403695999941345280", "725470592303890543", "518251720128856084"],
+               lang: "en_US",
                active: true
             });
 

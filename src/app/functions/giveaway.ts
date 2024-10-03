@@ -4,6 +4,7 @@ import giveawayQueue from "../../utils/services/giveawayQueue";
 import { Giveaway as Give } from "@prisma/client"
 import axios from "../../utils/services/axios";
 import logger from "../../utils/services/logger";
+import i18n from "../../utils/services/i18n";
 
 export default new class Giveaway {
 
@@ -27,9 +28,8 @@ export default new class Giveaway {
     }
 
     async post(req: Request, res: Response, next: NextFunction) {
-        const { channel, users, prize, endTime, guild, winnersCount } = req.body;
+        const { channel, users, prize, delay, guild, winnersCount, lang } = req.body;
 
-        const time = new Date(endTime);
 
         try {
             const giveaway = await prisma.giveaway.create({
@@ -37,7 +37,8 @@ export default new class Giveaway {
                     channel,
                     users,
                     prize,
-                    endTime: time,
+                    delay,
+                    lang,
                     guild,
                     active: true,
                     winnersCount
@@ -47,7 +48,7 @@ export default new class Giveaway {
             await giveawayQueue.add(
                 "giveaway",
                 giveaway,
-                { delay: time.getTime() - Date.now(), removeOnComplete: true }
+                { delay: 1000 * delay, removeOnComplete: true }
             );
 
             res.status(200).json({ message: "Sorteo creado", giveaway });
@@ -67,8 +68,8 @@ export default new class Giveaway {
 
             if (!giveaway || !giveaway.active) {
                 res
-                .status(404)
-                .json({ error: "Sorteo no encontrado o ya finalizado" });
+                    .status(404)
+                    .json({ error: "Sorteo no encontrado o ya finalizado" });
                 return;
             }
 
@@ -87,14 +88,93 @@ export default new class Giveaway {
         }
     }
 
-    async put(req: Request<{id: string}, any,Partial<Give>>, res: Response){
+    async put(req: Request<{ id: string }, any, Partial<Give>>, res: Response) {
         const { id } = req.params;
         let { channel, users, prize, guild, winnersCount } = req.body;
 
         try {
-            
+            const giveaway = await prisma.giveaway.findUnique({
+                where: { id: parseInt(id) },
+            });
+            if (!giveaway || !giveaway.active) {
+                res
+                    .status(404)
+                    .json({ error: "Sorteo no encontrado o ya finalizado" })
+            }
+
+            await prisma.giveaway.update({
+                where: { id: parseInt(id) },
+                data: { channel, users, prize, guild, winnersCount }
+            })
+
+            res.status(200).json({ message: "Sorteo actualizado" })
         } catch (error) {
-            
+            res
+                .status(500)
+                .json({ error: "Error al actualizar el sorteo" })
+        }
+    }
+
+    async pause(req: Request, res: Response) {
+        const { id } = req.params;
+
+        try {
+            const giveaway = await prisma.giveaway.findUnique({
+                where: { id: parseInt(id) },
+            });
+
+            if (!giveaway || !giveaway.active) {
+                res
+                    .status(404)
+                    .json({ error: "Sorteo no encontrado o ya finalizado" })
+            }
+
+            const job = await giveawayQueue.getJob(id);
+            if (job) await job.remove();
+
+            await prisma.giveaway.update({
+                where: { id: parseInt(id) },
+                data: {
+                    active: false,
+                    paused: true
+                }
+            });
+
+            res.status(200).json({ message: "Sorteo pausado" })
+        } catch (error) {
+            res
+                .status(500)
+                .json({ error: "Error al pausar el sorteo" })
+        }
+    }
+
+    async reOpen(req: Request, res: Response) {
+        const { id } = req.params;
+
+        try {
+            const giveaway = await prisma.giveaway.findUnique({
+                where: { id: parseInt(id) }
+            });
+
+            if (!giveaway || !giveaway.paused || !giveaway.active) {
+                res
+                    .status(404)
+                    .json({ error: "Sorteo no encontrado o no pausado" })
+                return;
+            }
+
+            await prisma.giveaway.update({
+                where: { id: parseInt(id) },
+                data: { paused: false }
+            })
+
+            giveawayQueue.add("giveaway", giveaway, { delay: Number(giveaway.delay), removeOnComplete: true });
+
+            res.status(200).json({ message: "Sorteo reabierto" })
+        } catch (error) {
+            res
+                .status(500)
+                .json({ error: "Error al reabrir el sorteo" })
         }
     }
 
@@ -109,15 +189,19 @@ export default new class Giveaway {
 
             await prisma.giveaway.update({
                 where: { id },
-                data: { active: false, winners: winner },
+                data: { active: false, winners: winner, end: true },
             });
 
             const winners = winner.map(w => `<@${w}>`)
 
-            const msg = `El ganador del sorteo es ${winners.join()}, has ganado \`${giveaway.prize}\` !!`
+
+            const msg = await i18n(giveaway.lang.split("_").join("-"), "end", {
+                winners: winners.join(", "),
+                prize: giveaway.prize
+            });
 
             try {
-                await axios.post(`channels/${giveaway.channel}/messages`, JSON.stringify({ content: msg }));
+                await this.sendMessage(giveaway.channel, msg)
             } catch (error) {
                 if (error instanceof Error) {
                     logger.errorWithType("Axios", error.stack || error.message);
@@ -139,5 +223,9 @@ export default new class Giveaway {
         }
 
         return winners;
+    }
+
+    private sendMessage(channel: string, message: string) {
+        return axios.post(`channels/${channel}/messages`, JSON.stringify({ content: message }));
     }
 }()

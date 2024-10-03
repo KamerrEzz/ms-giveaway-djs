@@ -19,9 +19,17 @@ model Giveaway {
   users        String[]
   winners      String[]
   prize        String
-  endTime      DateTime
+  delay        Int   
+  paused       Boolean  @default(false)
+  end          Boolean  @default(false)
+  lang         TypeLang @default(es_ES)
   guild        String
   winnersCount Int      @default(1)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
+}
+
+enum TypeLang {
+  en_US
+  es_ES
 }

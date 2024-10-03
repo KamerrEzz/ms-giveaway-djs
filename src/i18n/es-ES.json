@@ -1,0 +1,7 @@
+{
+    "start": "🎉 ¡El sorteo ha comenzado! 🎁 ¡Únete y participa para ganar `{{prize}}`!",
+    "end": "🎊 ¡El ganador del sorteo es {{winners}}! 🎉 ¡Has ganado `{{prize}}`! 🎁",
+    "pause": "⏸️ El sorteo está en pausa. ¡Vuelve pronto! ⌛",
+    "cancel": "❌ El sorteo ha sido cancelado. 😔",
+    "reStart": "🔄 ¡El sorteo ha reiniciado! 🎁 ¡Únete y participa para ganar `{{prize}}`!"
+}
