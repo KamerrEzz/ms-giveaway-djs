@@ -21,6 +21,6 @@ const GiveawayPut = Joi.object<Pick<Giveaway, "channel" | "users" | "prize" | "d
     active: Joi.boolean().optional(),
 }).min(1)
 
-const GiveawayJoinValid = Joi.alt().try(Joi.string(), Joi.array().items(Joi.string()));
+const GiveawayJoinValid = Joi.alt().try(Joi.string(), Joi.array().items(Joi.string())).required();
 
 export { GiveawayPost, GiveawayPut, GiveawayJoinValid };
