@@ -1,7 +1,7 @@
 import { Express } from "express";
 import giveaway from "../functions/giveaway";
 import joiValidated from "../functions/joiValidated";
-import { GiveawayPost, GiveawayPut } from "../schema/giveaway";
+import { GiveawayJoinValid, GiveawayPost, GiveawayPut } from "../schema/giveaway";
 
 export default function(client: Express){
     client
@@ -11,4 +11,6 @@ export default function(client: Express){
     .post("/giveaway/:id/pause", giveaway.pause)
     .post("/giveaway/:id/reopen", giveaway.reOpen)
     .post("/giveaway/:id/end", giveaway.end)
+    .post("/giveaway/:id/valid", joiValidated("body", GiveawayJoinValid), giveaway.Valid)
+    .post("/giveaway/:id/reroll",  giveaway.reRoll)
 }
