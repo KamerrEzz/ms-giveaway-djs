@@ -12,6 +12,7 @@ export const redis = {
     password: getEnv("REDIS_PASSWORD"),
     username: getEnv("REDIS_USERNAME"),
     port: getEnv("REDIS_PORT", "number") || 6379,
+    db: getEnv("REDIS_DB", "number") || 0
 }
 
 export const web = {

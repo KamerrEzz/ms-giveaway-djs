@@ -5,6 +5,7 @@ import logger from "./logger";
 export default new Redis(redis.port, redis.host, {
     password: redis.password,
     username: redis.username,
+    db: redis.db,
     maxRetriesPerRequest: null, 
     retryStrategy(times) {
         if (times === 1) {
