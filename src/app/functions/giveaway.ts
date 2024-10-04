@@ -309,6 +309,22 @@ export default new class Giveaway {
         }
     }
 
+    async guild(req: Request, res: Response) {
+        const { id } = req.params;
+        const { active, limit } = req.query;
+
+        try {
+            const giveaways = await prisma.giveaway.findMany({
+                where: { guild: id, active: Boolean(active) },
+                take: limit ? parseInt(limit as string) : 10
+            });
+
+            res.status(200).json(giveaways)
+        } catch (error) {
+            res.status(500).json({ error: "Error al obtener los sorteos" })
+        }
+    }
+
     private getWinners(giveaway: Give) {
         const winners = [];
         const usersCopy = [...giveaway.users];

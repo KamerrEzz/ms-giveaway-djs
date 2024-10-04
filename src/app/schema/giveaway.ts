@@ -23,4 +23,9 @@ const GiveawayPut = Joi.object<Pick<Giveaway, "channel" | "users" | "prize" | "d
 
 const GiveawayJoinValid = Joi.alt().try(Joi.string(), Joi.array().items(Joi.string())).required();
 
-export { GiveawayPost, GiveawayPut, GiveawayJoinValid };
+const GuildGiveawaysQuery = Joi.object({
+    limit: Joi.number().optional(),
+    active: Joi.boolean().required(),
+});
+
+export { GiveawayPost, GiveawayPut, GiveawayJoinValid, GuildGiveawaysQuery };
