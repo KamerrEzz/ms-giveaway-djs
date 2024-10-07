@@ -4,7 +4,7 @@ import path from 'path';
 
 export default async function i18n(language: string = 'es-ES', key: string, options?: Record<string, string>) {
     try {
-        const loadPath = path.resolve(__dirname, `../../i18n/{{lng}}.json`);
+        const loadPath = path.resolve(__dirname, `../../../i18n/{{lng}}.json`);
 
         const i18nInstance = await i18next
             .use(Backend)

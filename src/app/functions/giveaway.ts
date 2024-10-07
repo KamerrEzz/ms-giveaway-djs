@@ -295,6 +295,31 @@ export default new class Giveaway {
                 data: { active: false, winners: winner, end: true },
             });
 
+            if (winner.length == 0) {
+
+                const msg = await i18n(giveaway.lang.split("_").join("-"), "noWinners")
+
+                try {
+                    await this.sendMessage(giveaway.channel, msg)
+                } catch (error) {
+                    if (error instanceof Error) {
+                        logger.errorWithType("Axios", error.stack || error.message);
+                    }
+                }
+            };
+
+            if (winner.length < giveaway.winnersCount) {
+                const msg = await i18n(giveaway.lang.split("_").join("-"), "notEnoughParticipants");
+
+                try {
+                    await this.sendMessage(giveaway.channel, msg)
+                } catch (error) {
+                    if (error instanceof Error) {
+                        logger.errorWithType("Axios", error.stack || error.message);
+                    }
+                }
+            };
+
             const winners = winner.map(w => `<@${w}>`)
 
 
