@@ -227,7 +227,11 @@ export default new class Giveaway {
                 data: { users },
             });
     
-            res.status(200).json({ action: "Success", message: "Participación registrada" });
+            res.status(200).json({ 
+                action: "Success", 
+                message: "Participación registrada",
+                users,
+             });
         } catch (error) {
             console.error(error);  // Log error for debugging
             res.status(500).json({ action: "Error", message: "Error al registrar la participación" });
