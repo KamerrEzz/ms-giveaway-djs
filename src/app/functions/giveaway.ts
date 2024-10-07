@@ -181,63 +181,63 @@ export default new class Giveaway {
 
     async Valid(req: Request, res: Response) {
         const { id } = req.params;
-        const body = req.body as string | string[];
-    
+        const body = req.body;
+
         try {
             const giveaway = await prisma.giveaway.findUnique({
                 where: { id: parseInt(id) },
             });
-    
+
             if (!giveaway) {
                 res.status(404).json({ action: "NotFound", message: "Sorteo no encontrado" });
                 return
             }
-    
+
             if (!giveaway.active) {
                 res.status(404).json({ action: "Ended", message: "Sorteo finalizado" });
                 return
             }
-    
+
             if (giveaway.paused) {
                 res.status(404).json({ action: "Paused", message: "Sorteo pausado" });
                 return
             }
-    
+
             // Verificar si ya participa
-            if (typeof body === "string" && giveaway.users.includes(body)) {
+            if ("user" in body && giveaway.users.includes(body.user)) {
                 res.status(400).json({ action: "Already", message: "Ya estás participando" });
                 return
             }
-    
+
             if (Array.isArray(body) && body.every(user => giveaway.users.includes(user))) {
                 res.status(400).json({ action: "Already", message: "Todos los usuarios ya están participando" });
                 return
             }
-    
+
             // Filtrar usuarios duplicados y agregar nuevos
             const users = giveaway.users
                 .filter((x) => {
                     if (typeof body === "string") return x !== body;
                     if (Array.isArray(body)) return !body.includes(x);
                 })
-                .concat(typeof body === "string" ? [body] : body);
-    
+                .concat("user" in body ? [body.user] : body);
+
             await prisma.giveaway.update({
                 where: { id: parseInt(id) },
                 data: { users },
             });
-    
-            res.status(200).json({ 
-                action: "Success", 
+
+            res.status(200).json({
+                action: "Success",
                 message: "Participación registrada",
                 users,
-             });
+            });
         } catch (error) {
             console.error(error);  // Log error for debugging
             res.status(500).json({ action: "Error", message: "Error al registrar la participación" });
         }
     }
-    
+
     async reRoll(req: Request, res: Response) {
         const { id } = req.params;
 
@@ -246,38 +246,38 @@ export default new class Giveaway {
                 where: { id: parseInt(id) }
             });
 
-            if(!giveaway || !giveaway.end) {
+            if (!giveaway || !giveaway.end) {
                 res.status(404).json({ error: "Sorteo no encontrado o no finalizado" });
                 return
             };
 
-        const winners = this.getWinners(giveaway);
+            const winners = this.getWinners(giveaway);
 
-        await prisma.giveaway.update({
-            where: { id: parseInt(id) },
-            data: { winners }
-        });
+            await prisma.giveaway.update({
+                where: { id: parseInt(id) },
+                data: { winners }
+            });
 
-        const msg = await i18n(giveaway.lang.split("_").join("-"), "end", {
-            winners: winners.join(", "),
-            prize: giveaway.prize
-        });
+            const msg = await i18n(giveaway.lang.split("_").join("-"), "end", {
+                winners: winners.join(", "),
+                prize: giveaway.prize
+            });
 
-        try {
-            await this.sendMessage(giveaway.channel, msg)
-        } catch (error) {
-            if (error instanceof Error) {
-                logger.errorWithType("Axios", error.stack || error.message);
-                res
-                .status(500)
-                .json({ error: "Error al enviar el mensaje de sorteo" })
-                return
+            try {
+                await this.sendMessage(giveaway.channel, msg)
+            } catch (error) {
+                if (error instanceof Error) {
+                    logger.errorWithType("Axios", error.stack || error.message);
+                    res
+                        .status(500)
+                        .json({ error: "Error al enviar el mensaje de sorteo" })
+                    return
+                }
             }
-        }
 
-        res.status(200).json({ message: "Sorteo re-rolleado", winners })
+            res.status(200).json({ message: "Sorteo re-rolleado", winners })
         } catch (error) {
-            
+
         }
     }
 

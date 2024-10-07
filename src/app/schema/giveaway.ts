@@ -21,7 +21,7 @@ const GiveawayPut = Joi.object<Pick<Giveaway, "channel" | "users" | "prize" | "d
     active: Joi.boolean().optional(),
 }).min(1)
 
-const GiveawayJoinValid = Joi.alt().try(Joi.string(), Joi.array().items(Joi.string())).required();
+const GiveawayJoinValid = Joi.alt().try(Joi.object({ user: Joi.string() }), Joi.array().items(Joi.string())).required();
 
 const GuildGiveawaysQuery = Joi.object({
     limit: Joi.number().optional(),
