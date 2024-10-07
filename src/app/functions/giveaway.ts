@@ -300,7 +300,8 @@ export default new class Giveaway {
                 const msg = await i18n(giveaway.lang.split("_").join("-"), "noWinners")
 
                 try {
-                    await this.sendMessage(giveaway.channel, msg)
+                    await this.sendMessage(giveaway.channel, msg);
+                    return;
                 } catch (error) {
                     if (error instanceof Error) {
                         logger.errorWithType("Axios", error.stack || error.message);
@@ -312,7 +313,8 @@ export default new class Giveaway {
                 const msg = await i18n(giveaway.lang.split("_").join("-"), "notEnoughParticipants");
 
                 try {
-                    await this.sendMessage(giveaway.channel, msg)
+                    await this.sendMessage(giveaway.channel, msg);
+                    return;
                 } catch (error) {
                     if (error instanceof Error) {
                         logger.errorWithType("Axios", error.stack || error.message);
@@ -329,7 +331,8 @@ export default new class Giveaway {
             });
 
             try {
-                await this.sendMessage(giveaway.channel, msg)
+                await this.sendMessage(giveaway.channel, msg);
+                return;
             } catch (error) {
                 if (error instanceof Error) {
                     logger.errorWithType("Axios", error.stack || error.message);
