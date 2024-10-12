@@ -15,7 +15,10 @@ export default function (type: "params" | "body" | "query", schema: Joi.AnySchem
         const { error } = schema.validate(data, { abortEarly: false });
 
         if (error) {
-            res.status(400).json(error.details.map((x)=>x.message));
+            res.status(400).json({
+                action: 'Error',
+                message: error.details.map((x)=>x.message)
+            });
             return;
         }
 
