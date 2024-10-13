@@ -1,6 +1,6 @@
 {
   "name": "ms-giveaway-djs",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "main": "index.js",
   "license": "MIT",
   "author": {
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "discord-api-types": "0.37.100",
     "@prisma/client": "^5.20.0",
     "@types/node": "^22",
     "axios": "^1.7.7",

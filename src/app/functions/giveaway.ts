@@ -2,9 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import { prisma } from "../../prismaClient";
 import giveawayQueue from "../../utils/services/giveawayQueue";
 import { Giveaway as Give } from "@prisma/client"
-import axios from "../../utils/services/axios";
 import logger from "../../utils/services/logger";
 import i18n from "../../utils/services/i18n";
+import Message, { actionRow, button, embed } from "../../utils/functions/Message";
+import { ButtonStyle } from "discord-api-types/v10";
 
 export default new class Giveaway {
 
@@ -32,7 +33,7 @@ export default new class Giveaway {
 
 
         try {
-            const giveaway = await prisma.giveaway.create({
+            let giveaway = await prisma.giveaway.create({
                 data: {
                     channel,
                     users,
@@ -44,6 +45,41 @@ export default new class Giveaway {
                     winnersCount
                 },
             });
+
+
+            const message = await Message.create(channel, {
+                embeds: [
+                    embed(
+                        prize,
+                        await EmbedDescription({
+                            count: winnersCount,
+                            delay,
+                            lang,
+                        }),
+                        0x2f3136
+                    )
+                ],
+                components: [
+                    actionRow(
+                        button(
+                            `giveaway.join-{{${giveaway.id}}}`,
+                            ButtonStyle.Primary,
+                            undefined,
+                            "🎉"
+                        )
+                    )
+                ]
+            });
+
+            if (!message) {
+                res.status(400).json({ error: "No se pudo crear el mensaje" });
+                return;
+            };
+
+            giveaway = await prisma.giveaway.update({
+                where: { id: giveaway.id },
+                data: { message: message.id },
+            })
 
             await giveawayQueue.add(
                 "giveaway",
@@ -179,7 +215,7 @@ export default new class Giveaway {
         }
     }
 
-    async Valid(req: Request, res: Response) {
+    async join(req: Request, res: Response) {
         const { id } = req.params;
         const body = req.body;
 
@@ -202,25 +238,14 @@ export default new class Giveaway {
                 res.status(404).json({ action: "Paused", message: "Sorteo pausado" });
                 return
             }
-
-            // Verificar si ya participa
-            if ("user" in body && giveaway.users.includes(body.user)) {
-                res.status(400).json({ action: "Already", message: "Ya estás participando" });
-                return
+            let users = giveaway.users || [];
+            let action = users.includes(body.user) ? 'Already' : 'Success';
+            let message = action === 'Already' ? 'El usuario ya existe' : 'Usuario agregado';
+            if (action === 'Success') {
+                users.push(body.user);
+            } else {
+                res.status(400).json({ action, message })
             }
-
-            if (Array.isArray(body) && body.every(user => giveaway.users.includes(user))) {
-                res.status(400).json({ action: "Already", message: "Todos los usuarios ya están participando" });
-                return
-            }
-
-            // Filtrar usuarios duplicados y agregar nuevos
-            const users = giveaway.users
-                .filter((x) => {
-                    if (typeof body === "string") return x !== body;
-                    if (Array.isArray(body)) return !body.includes(x);
-                })
-                .concat("user" in body ? [body.user] : body);
 
             await prisma.giveaway.update({
                 where: { id: parseInt(id) },
@@ -228,8 +253,8 @@ export default new class Giveaway {
             });
 
             res.status(200).json({
-                action: "Success",
-                message: "Participación registrada",
+                action,
+                message,
                 users,
             });
         } catch (error) {
@@ -253,6 +278,11 @@ export default new class Giveaway {
 
             const winners = this.getWinners(giveaway);
 
+            if (!winners) {
+                res.status(200).json({ action: "NO_WINNERS_COMPLET", message: "No hubo usuarios necesarios para el sorteo", winners })
+                return;
+            }
+
             await prisma.giveaway.update({
                 where: { id: parseInt(id) },
                 data: { winners }
@@ -264,7 +294,28 @@ export default new class Giveaway {
             });
 
             try {
-                await this.sendMessage(giveaway.channel, msg)
+                if (giveaway.message) await Message.create(giveaway.channel, {
+                    content: msg, message_reference: {
+                        message_id: giveaway.message,
+                        fail_if_not_exists: false,
+                        channel_id: giveaway.channel,
+                        guild_id: giveaway.guild
+                    }
+                });
+
+                if (giveaway.message) await Message.edit(giveaway.channel, giveaway.message, {
+                    embeds: [
+                        embed(
+                            giveaway.prize,
+                            await EmbedDescription({
+                                winners: winners.join(", "),
+                                delay: giveaway.delay,
+                                lang: giveaway.lang,
+                            }, true),
+                            0x2f3136
+                        )
+                    ],
+                })
             } catch (error) {
                 if (error instanceof Error) {
                     logger.errorWithType("Axios", error.stack || error.message);
@@ -277,7 +328,9 @@ export default new class Giveaway {
 
             res.status(200).json({ message: "Sorteo re-rolleado", winners })
         } catch (error) {
-
+            res
+                .status(500)
+                .json({ error: "Error al re-rollear el sorteo" })
         }
     }
 
@@ -289,41 +342,19 @@ export default new class Giveaway {
         if (giveaway && giveaway.active) {
             const winner = this.getWinners(giveaway)
 
+            if (!winner) {
+                await Message.create(giveaway.channel, {
+                    content: await i18n(giveaway.lang.split("_").join("-"), "noWinners")
+                })
+                return
+            }
 
             await prisma.giveaway.update({
                 where: { id },
                 data: { active: false, winners: winner, end: true },
             });
 
-            if (winner.length == 0) {
-
-                const msg = await i18n(giveaway.lang.split("_").join("-"), "noWinners")
-
-                try {
-                    await this.sendMessage(giveaway.channel, msg);
-                    return;
-                } catch (error) {
-                    if (error instanceof Error) {
-                        logger.errorWithType("Axios", error.stack || error.message);
-                    }
-                }
-            };
-
-            if (winner.length < giveaway.winnersCount) {
-                const msg = await i18n(giveaway.lang.split("_").join("-"), "notEnoughParticipants");
-
-                try {
-                    await this.sendMessage(giveaway.channel, msg);
-                    return;
-                } catch (error) {
-                    if (error instanceof Error) {
-                        logger.errorWithType("Axios", error.stack || error.message);
-                    }
-                }
-            };
-
             const winners = winner.map(w => `<@${w}>`)
-
 
             const msg = await i18n(giveaway.lang.split("_").join("-"), "end", {
                 winners: winners.join(", "),
@@ -331,15 +362,34 @@ export default new class Giveaway {
             });
 
             try {
-                await this.sendMessage(giveaway.channel, msg);
-                return;
+                if (giveaway.message) await Message.create(giveaway.channel, {
+                    content: msg, message_reference: {
+                        message_id: giveaway.message,
+                        fail_if_not_exists: false,
+                        channel_id: giveaway.channel,
+                        guild_id: giveaway.guild
+                    }
+                });
+                if (giveaway.message) await Message.edit(giveaway.channel, giveaway.message, {
+                    embeds: [
+                        embed(
+                            giveaway.prize,
+                            await EmbedDescription({
+                                winners: winners.join(", "),
+                                delay: giveaway.delay,
+                                lang: giveaway.lang,
+                            }, true),
+                            0x2f3136
+                        )
+                    ],
+                })
             } catch (error) {
                 if (error instanceof Error) {
                     logger.errorWithType("Axios", error.stack || error.message);
                 }
             }
         }
-    }
+    };
 
     async guild(req: Request, res: Response) {
         const { id } = req.params;
@@ -355,24 +405,48 @@ export default new class Giveaway {
         } catch (error) {
             res.status(500).json({ error: "Error al obtener los sorteos" })
         }
-    }
+    };
+
 
     private getWinners(giveaway: Give) {
-        const winners = [];
-        const usersCopy = [...giveaway.users];
+        const usersGiveaway: string[] = giveaway.users;
+        const winnersCount = giveaway.winnersCount;
+        let winnersSet = new Set<string>();
+        if (winnersCount > 0 && usersGiveaway.length >= winnersCount) {
+            const shuffledUsers = [...usersGiveaway].sort(() => 0.5 - Math.random());
+            for (let user of shuffledUsers) {
+                winnersSet.add(user);
+                if (winnersSet.size === winnersCount) {
+                    break;
+                }
+            }
+            while (winnersSet.size < winnersCount) {
+                const randomUser = usersGiveaway[Math.floor(Math.random() * usersGiveaway.length)];
+                winnersSet.add(randomUser);
+            }
 
-        for (let i = 0; i < giveaway.winnersCount; i++) {
-            if (usersCopy.length === 0) break;
-
-            const randomIndex = Math.floor(Math.random() * usersCopy.length);
-            winners.push(usersCopy[randomIndex]);
-            usersCopy.splice(randomIndex, 1);
+            const winners = Array.from(winnersSet);
+            return winners;
+        } else {
+            return false;
         }
-
-        return winners;
     }
 
-    private sendMessage(channel: string, message: string) {
-        return axios.post(`channels/${channel}/messages`, JSON.stringify({ content: message }));
-    }
 }()
+
+async function EmbedDescription(data: {
+    lang: string,
+    delay: number,
+    count?: number,
+    winners?: string,
+}, winners: boolean = false) {
+    const lang = data.lang.split("_").join("-");
+    try {
+        let text = await i18n(lang, "embed.description", data);
+        text += await i18n(lang, "embed.winners", { winners: (winners ? data?.winners : data.count?.toString()) || "" });
+
+        return text
+    } catch (e) {
+        return undefined
+    }
+}

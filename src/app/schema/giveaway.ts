@@ -7,7 +7,7 @@ const GiveawayPost = Joi.object<Pick<Giveaway, "guild" | "channel" | "users" | "
     users: Joi.array().items(Joi.string()).optional(),
     prize: Joi.string().required(),
     delay: Joi.number().required().tag("Segundos"),
-    lang: Joi.string(), 
+    lang: Joi.string(),
     winnersCount: Joi.number().required(),
     active: Joi.boolean().required(),
 })
@@ -21,7 +21,7 @@ const GiveawayPut = Joi.object<Pick<Giveaway, "channel" | "users" | "prize" | "d
     active: Joi.boolean().optional(),
 }).min(1)
 
-const GiveawayJoinValid = Joi.alt().try(Joi.object({ user: Joi.string() }), Joi.array().items(Joi.string())).required();
+const GiveawayJoinValid = Joi.object({ user: Joi.string() }).required();
 
 const GuildGiveawaysQuery = Joi.object({
     limit: Joi.number().optional(),

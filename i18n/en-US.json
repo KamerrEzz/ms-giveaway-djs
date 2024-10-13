@@ -5,5 +5,6 @@
     "cancel": "❌ The giveaway has been canceled. 😔",
     "reStart": "🔄 The giveaway has restarted! 🎁 Join now for a chance to win `{{prize}}`!",
     "noWinners": "😟 Unfortunately, there were no participants in the giveaway. Better luck next time! 🍀",
-    "notEnoughParticipants": "😕 Unfortunately, there weren't enough participants to select the winners. Try again soon! 🔄"
+    "notEnoughParticipants": "😕 Unfortunately, there weren't enough participants to select the winners. Try again soon! 🔄",
+    "embedDescription": "⏳ Ends: <t:{{delay}}:R>\n🔢 Entries: {{entries}}\n🏆 Winners: {{winners}}"
 }

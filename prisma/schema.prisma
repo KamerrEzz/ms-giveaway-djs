@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,22 +8,26 @@ datasource db {
 }
 
 model Giveaway {
-  id           Int      @id @default(autoincrement())
-  channel      String
-  users        String[]
-  winners      String[]
-  prize        String
-  delay        Int   
-  paused       Boolean  @default(false)
-  end          Boolean  @default(false)
-  lang         TypeLang @default(es_ES)
-  guild        String
-  winnersCount Int      @default(1)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-}
+  // Identificadores del sorteo
+  id      Int     @id @default(autoincrement())
+  channel String // Canal donde se realiza el sorteo
+  message String? // Mensaje del sorteo
+  guild   String // ID del servidor o gremio
+  active  Boolean @default(true) // Estado del sorteo (activo/inactivo)
 
-enum TypeLang {
-  en_US
-  es_ES
+  // Detalles del sorteo
+  prize        String // Premio del sorteo
+  delay        Int // Duración en milisegundos para el sorteo
+  paused       Boolean  @default(false) // Si el sorteo está pausado
+  end          Boolean  @default(false) // Si el sorteo ha finalizado
+  lang         String   @default("es-ES") // Idioma del sorteo
+  winnersCount Int      @default(1) // Cantidad de ganadores
+  createdAt    DateTime @default(now()) // Fecha de creación del sorteo
+
+  // Participantes y ganadores
+  users   String[] // Array de IDs de usuarios participantes
+  winners String[] // Array de IDs de ganadores
+
+  // Índices para optimizar consultas
+  @@index([channel, guild, active, message], name: "giveaway_index")
 }

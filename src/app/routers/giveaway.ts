@@ -12,7 +12,7 @@ export default function(client: Express){
     .post("/giveaway/:id/pause", giveaway.pause)
     .post("/giveaway/:id/reopen", giveaway.reOpen)
     .post("/giveaway/:id/end", giveaway.end)
-    .post("/giveaway/:id/valid", joiValidated("body", GiveawayJoinValid), giveaway.Valid)
+    .post("/giveaway/:id/valid", joiValidated("body", GiveawayJoinValid), giveaway.join)
     .post("/giveaway/:id/reroll",  giveaway.reRoll)
     .get("/guild/:id", joiValidated("query", GuildGiveawaysQuery), joiValidated("params", Joi.object({
         id: Joi.string().required().regex(/^[0-9]$/),
