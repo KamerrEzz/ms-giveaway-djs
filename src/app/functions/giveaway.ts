@@ -220,7 +220,7 @@ export default new class Giveaway {
 
     async join(req: Request, res: Response) {
         const { id } = req.params;
-        const body = req.body;
+        const body = req.body as { user: string };
 
         try {
             const giveaway = await prisma.giveaway.findUnique({
@@ -241,6 +241,7 @@ export default new class Giveaway {
                 res.status(404).json({ action: "Paused", message: "Sorteo pausado" });
                 return
             }
+          
             let users = giveaway.users || [];
             let action = users.includes(body.user) ? 'Already' : 'Success';
             let message = action === 'Already' ? 'El usuario ya existe' : 'Usuario agregado';
@@ -256,6 +257,7 @@ export default new class Giveaway {
                 where: { id: parseInt(id) },
                 data: { users },
             });
+
 
             if (giveaway.message) await Message.edit(
                 giveaway.channel,
@@ -283,7 +285,7 @@ export default new class Giveaway {
                 users,
             });
         } catch (error) {
-            console.error(error);  // Log error for debugging
+            console.error(error);
             res.status(500).json({ action: "Error", message: "Error al registrar la participación" });
         }
     }
@@ -343,6 +345,7 @@ export default new class Giveaway {
                         )
                     ],
                 })
+
             } catch (error) {
                 if (error instanceof Error) {
                     logger.errorWithType("Axios", error.stack || error.message);
@@ -442,12 +445,13 @@ export default new class Giveaway {
         const usersGiveaway: string[] = giveaway.users;
         const winnersCount = giveaway.winnersCount;
         let winnersSet = new Set<string>();
+
         if (winnersCount > 0 && usersGiveaway.length >= winnersCount) {
             const shuffledUsers = [...usersGiveaway].sort(() => 0.5 - Math.random());
             for (let user of shuffledUsers) {
                 winnersSet.add(user);
                 if (winnersSet.size === winnersCount) {
-                    break;
+                    break; 
                 }
             }
             while (winnersSet.size < winnersCount) {
@@ -460,6 +464,7 @@ export default new class Giveaway {
         } else {
             return false;
         }
+
     }
 
 }()

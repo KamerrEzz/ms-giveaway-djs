@@ -21,7 +21,11 @@ const GiveawayPut = Joi.object<Pick<Giveaway, "channel" | "users" | "prize" | "d
     active: Joi.boolean().optional(),
 }).min(1)
 
-const GiveawayJoinValid = Joi.object({ user: Joi.string() }).required();
+
+const GiveawayJoinValid = Joi.object({
+    user: Joi.string()
+}).required();
+
 
 const GuildGiveawaysQuery = Joi.object({
     limit: Joi.number().optional(),
