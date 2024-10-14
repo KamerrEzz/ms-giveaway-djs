@@ -5,6 +5,7 @@ config()
 export const discord = {
     token: getEnv("DISCORD_TOKEN"),
     version: getEnv("DISCORD_VERSION") || "10",
+    format: getEnv("DISCORD_BUTTON_FORMAT") || "-{{i}}"
 }
 
 export const redis = {
@@ -19,6 +20,12 @@ export const web = {
     token: getEnv("Token_Secret"),
     port: getEnv("PORT", "number") || 3000
 }
+
+
+export function discordButtonFormat(id: string){
+    return discord.format.replace(/i/g, id)
+};
+
 
 export function getEnv<T extends "string" | "number" | undefined = undefined>(
     key: string,

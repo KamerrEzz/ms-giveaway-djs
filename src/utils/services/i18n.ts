@@ -3,6 +3,9 @@ import Backend from 'i18next-fs-backend';
 import path from 'path';
 
 export default async function i18n(language: string = 'es-ES', key: string, options?: Record<string, string | number>) {
+
+    if(/\_/g.test(language)) language = language.split(/\_/g).join('-');
+
     try {
         const loadPath = path.resolve(__dirname, `../../../i18n/{{lng}}.json`);
 

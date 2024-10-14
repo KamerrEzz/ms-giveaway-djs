@@ -6,6 +6,7 @@ import logger from "../../utils/services/logger";
 import i18n from "../../utils/services/i18n";
 import Message, { actionRow, button, embed } from "../../utils/functions/Message";
 import { ButtonStyle } from "discord-api-types/v10";
+import { discordButtonFormat } from "../../utils/assets/env";
 
 export default new class Giveaway {
 
@@ -52,17 +53,19 @@ export default new class Giveaway {
                     embed(
                         prize,
                         await EmbedDescription({
-                            count: winnersCount,
-                            delay,
+                            winners: winnersCount,
+                            delay: Math.floor((Date.now() + (delay * 1000)) / 1000),
                             lang,
+                            entries: users?.length || 0,
+                            id: giveaway.id
                         }),
-                        0x2f3136
+                        "#002d9e"
                     )
                 ],
                 components: [
                     actionRow(
                         button(
-                            `giveaway.join-{{${giveaway.id}}}`,
+                            `giveaway.join${discordButtonFormat(giveaway.id.toString())}`,
                             ButtonStyle.Primary,
                             undefined,
                             "🎉"
@@ -247,11 +250,33 @@ export default new class Giveaway {
                 res.status(400).json({ action, message })
             }
 
+
+
             await prisma.giveaway.update({
                 where: { id: parseInt(id) },
                 data: { users },
             });
 
+            if (giveaway.message) await Message.edit(
+                giveaway.channel,
+                giveaway.message,
+                {
+                    embeds: [
+                        embed(
+                            giveaway.prize,
+                            await EmbedDescription({
+                                winners: giveaway.winnersCount.toString(),
+                                lang: giveaway.lang,
+                                entries: users.length,
+                                id: giveaway.id,
+                                delay: Math.floor((giveaway.createdAt.getTime() + (giveaway.delay * 1000)) / 1000)
+                            }),
+                            "#1100ff"
+                        )
+                    ]
+                }
+            );
+            
             res.status(200).json({
                 action,
                 message,
@@ -288,7 +313,7 @@ export default new class Giveaway {
                 data: { winners }
             });
 
-            const msg = await i18n(giveaway.lang.split("_").join("-"), "end", {
+            const msg = await i18n(giveaway.lang, "end", {
                 winners: winners.join(", "),
                 prize: giveaway.prize
             });
@@ -309,10 +334,12 @@ export default new class Giveaway {
                             giveaway.prize,
                             await EmbedDescription({
                                 winners: winners.join(", "),
-                                delay: giveaway.delay,
                                 lang: giveaway.lang,
-                            }, true),
-                            0x2f3136
+                                entries: giveaway.users.length,
+                                id: giveaway.id,
+                                delay: Math.floor((giveaway.createdAt.getTime() + (giveaway.delay * 1000)) / 1000)
+                            }),
+                            "#1100ff"
                         )
                     ],
                 })
@@ -344,7 +371,7 @@ export default new class Giveaway {
 
             if (!winner) {
                 await Message.create(giveaway.channel, {
-                    content: await i18n(giveaway.lang.split("_").join("-"), "noWinners")
+                    content: await i18n(giveaway.lang, "noWinners")
                 })
                 return
             }
@@ -356,7 +383,7 @@ export default new class Giveaway {
 
             const winners = winner.map(w => `<@${w}>`)
 
-            const msg = await i18n(giveaway.lang.split("_").join("-"), "end", {
+            const msg = await i18n(giveaway.lang, "end", {
                 winners: winners.join(", "),
                 prize: giveaway.prize
             });
@@ -376,12 +403,15 @@ export default new class Giveaway {
                             giveaway.prize,
                             await EmbedDescription({
                                 winners: winners.join(", "),
-                                delay: giveaway.delay,
                                 lang: giveaway.lang,
-                            }, true),
-                            0x2f3136
+                                entries: giveaway.users.length,
+                                id: giveaway.id,
+                                delay: Math.floor((giveaway.createdAt.getTime() + (giveaway.delay * 1000)) / 1000)
+                            }),
+                            "#1100ff"
                         )
                     ],
+                components: []
                 })
             } catch (error) {
                 if (error instanceof Error) {
@@ -436,16 +466,14 @@ export default new class Giveaway {
 
 async function EmbedDescription(data: {
     lang: string,
-    delay: number,
-    count?: number,
-    winners?: string,
-}, winners: boolean = false) {
-    const lang = data.lang.split("_").join("-");
+    delay?: number,
+    winners: string,
+    entries: number,
+    id: number,
+}) {
     try {
-        let text = await i18n(lang, "embed.description", data);
-        text += await i18n(lang, "embed.winners", { winners: (winners ? data?.winners : data.count?.toString()) || "" });
-
-        return text
+        if (!data.delay) return await i18n(data.lang, "embedDescriptionNotDelay", data)
+        return await i18n(data.lang, "embedDescription", data)
     } catch (e) {
         return undefined
     }
