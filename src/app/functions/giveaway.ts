@@ -241,7 +241,7 @@ export default new class Giveaway {
                 res.status(404).json({ action: "Paused", message: "Sorteo pausado" });
                 return
             }
-          
+
             let users = giveaway.users || [];
             let action = users.includes(body.user) ? 'Already' : 'Success';
             let message = action === 'Already' ? 'El usuario ya existe' : 'Usuario agregado';
@@ -278,7 +278,7 @@ export default new class Giveaway {
                     ]
                 }
             );
-            
+
             res.status(200).json({
                 action,
                 message,
@@ -323,14 +323,9 @@ export default new class Giveaway {
             });
 
             try {
-                if (giveaway.message) await Message.create(giveaway.channel, {
-                    content: msg, message_reference: {
-                        message_id: giveaway.message,
-                        fail_if_not_exists: false,
-                        channel_id: giveaway.channel,
-                        guild_id: giveaway.guild
-                    }
-                });
+                await Message.create(giveaway.channel, {
+                    content: msg
+                }, giveaway);
 
                 if (giveaway.message) await Message.edit(giveaway.channel, giveaway.message, {
                     embeds: [
@@ -376,8 +371,8 @@ export default new class Giveaway {
 
             if (!winner) {
                 await Message.create(giveaway.channel, {
-                    content: await i18n(giveaway.lang, "noWinners")
-                })
+                    content: await i18n(giveaway.lang, "noWinners"),
+                }, giveaway)
                 return
             }
 
@@ -394,14 +389,9 @@ export default new class Giveaway {
             });
 
             try {
-                if (giveaway.message) await Message.create(giveaway.channel, {
-                    content: msg, message_reference: {
-                        message_id: giveaway.message,
-                        fail_if_not_exists: false,
-                        channel_id: giveaway.channel,
-                        guild_id: giveaway.guild
-                    }
-                });
+                await Message.create(giveaway.channel, {
+                    content: msg,
+                }, giveaway);
                 if (giveaway.message) await Message.edit(giveaway.channel, giveaway.message, {
                     embeds: [
                         embed(
@@ -416,7 +406,7 @@ export default new class Giveaway {
                             "#1100ff"
                         )
                     ],
-                components: []
+                    components: []
                 })
             } catch (error) {
                 if (error instanceof Error) {
@@ -453,7 +443,7 @@ export default new class Giveaway {
             for (let user of shuffledUsers) {
                 winnersSet.add(user);
                 if (winnersSet.size === winnersCount) {
-                    break; 
+                    break;
                 }
             }
             while (winnersSet.size < winnersCount) {
