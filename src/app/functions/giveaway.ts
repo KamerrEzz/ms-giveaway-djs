@@ -232,7 +232,7 @@ export default new class Giveaway {
                 return
             }
 
-            if (!giveaway.active) {
+            if (!giveaway.active || giveaway.end) {
                 res.status(404).json({ action: "Ended", message: "Sorteo finalizado" });
                 return
             }
@@ -286,7 +286,9 @@ export default new class Giveaway {
             });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ action: "Error", message: "Error al registrar la participación" });
+            if (!res.headersSent) {
+                res.status(500).json({ action: "Error", message: "Error al registrar la participación" });
+            }
         }
     }
 
