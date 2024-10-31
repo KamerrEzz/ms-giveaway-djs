@@ -5,7 +5,8 @@ config()
 export const discord = {
     token: getEnv("DISCORD_TOKEN"),
     version: getEnv("DISCORD_VERSION") || "10",
-    format: getEnv("DISCORD_BUTTON_FORMAT") || "-{{i}}"
+    format: getEnv("DISCORD_BUTTON_FORMAT") || "-{{i}}",
+    imagen: getEnv("DISCORD_EMBED_GIVEAWAY_IMAGEN")
 }
 
 export const redis = {
@@ -22,7 +23,7 @@ export const web = {
 }
 
 
-export function discordButtonFormat(id: string){
+export function discordButtonFormat(id: string) {
     return discord.format.replace(/i/g, id)
 };
 
@@ -37,6 +38,8 @@ export function getEnv<T extends "string" | "number" | undefined = undefined>(
     if (type === "number") {
         return value !== undefined ? parseInt(value) : undefined as any;
     }
+
+    if (value == '') return undefined as any;
 
     return value as any;
 }

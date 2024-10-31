@@ -8,19 +8,26 @@ import Message, { actionRow, button, embed } from "../../utils/functions/Message
 import { ButtonStyle } from "discord-api-types/v10";
 import { discordButtonFormat } from "../../utils/assets/env";
 
-export default new class Giveaway {
+const give = new class Giveaway {
 
     async get(req: Request, res: Response) {
-        const { id } = req.params
-        const { active } = req.query
+        const id = ValidNumber(req.params.id)
+
+        if (!id) {
+            res.status(400).json({ error: "El id debe ser un número" });
+            return;
+        }
+
         try {
-            const guild = await prisma.giveaway.findMany({
-                where: { guild: id, active: Boolean(active) },
+            const guild = await prisma.giveaway.findFirst({
+                where: { id: id },
             });
 
             if (!guild) {
                 res.status(404).json({ error: "Servidor no encontrado" });
+                return
             }
+
 
             res.status(200).json(guild);
         } catch (error) {
@@ -98,11 +105,14 @@ export default new class Giveaway {
     }
 
     async end(req: Request, res: Response) {
-        const { id } = req.params;
-
+        const id = ValidNumber(req.params.id);
+        if (!id) {
+            res.status(400).json({ error: "El id debe ser un número" });
+            return;
+        }
         try {
             const giveaway = await prisma.giveaway.findUnique({
-                where: { id: parseInt(id) },
+                where: { id },
             });
 
             if (!giveaway || !giveaway.active) {
@@ -112,9 +122,9 @@ export default new class Giveaway {
                 return;
             }
 
-            await this.finish(giveaway.id);
+            await give.finish(giveaway.id);
 
-            const job = await giveawayQueue.getJob(id);
+            const job = await giveawayQueue.getJob(String(id));
             if (job) {
                 await job.remove();
             }
@@ -128,12 +138,17 @@ export default new class Giveaway {
     }
 
     async put(req: Request<{ id: string }, any, Partial<Give>>, res: Response) {
-        const { id } = req.params;
+        const id = ValidNumber(req.params.id);
         let { channel, users, prize, guild, winnersCount } = req.body;
+
+        if (!id) {
+            res.status(400).json({ error: "El id debe ser un número" });
+            return;
+        }
 
         try {
             const giveaway = await prisma.giveaway.findUnique({
-                where: { id: parseInt(id) },
+                where: { id },
             });
             if (!giveaway || !giveaway.active) {
                 res
@@ -142,7 +157,7 @@ export default new class Giveaway {
             }
 
             await prisma.giveaway.update({
-                where: { id: parseInt(id) },
+                where: { id },
                 data: { channel, users, prize, guild, winnersCount }
             })
 
@@ -155,11 +170,15 @@ export default new class Giveaway {
     }
 
     async pause(req: Request, res: Response) {
-        const { id } = req.params;
+        const id = ValidNumber(req.params.id);
 
+        if (!id) {
+            res.status(400).json({ error: "El id debe ser un número" });
+            return;
+        }
         try {
             const giveaway = await prisma.giveaway.findUnique({
-                where: { id: parseInt(id) },
+                where: { id },
             });
 
             if (!giveaway || !giveaway.active) {
@@ -168,11 +187,11 @@ export default new class Giveaway {
                     .json({ error: "Sorteo no encontrado o ya finalizado" })
             }
 
-            const job = await giveawayQueue.getJob(id);
+            const job = await giveawayQueue.getJob(String(id));
             if (job) await job.remove();
 
             await prisma.giveaway.update({
-                where: { id: parseInt(id) },
+                where: { id },
                 data: {
                     active: true,
                     paused: true,
@@ -219,12 +238,16 @@ export default new class Giveaway {
     }
 
     async join(req: Request, res: Response) {
-        const { id } = req.params;
+        const id = ValidNumber(req.params.id);
         const body = req.body as { user: string };
+        if (!id) {
+            res.status(400).json({ action: "Error", message: "El id debe ser un número" });
+            return;
+        }
 
         try {
             const giveaway = await prisma.giveaway.findUnique({
-                where: { id: parseInt(id) },
+                where: { id },
             });
 
             if (!giveaway) {
@@ -248,13 +271,14 @@ export default new class Giveaway {
             if (action === 'Success') {
                 users.push(body.user);
             } else {
-                res.status(400).json({ action, message })
+                res.status(400).json({ action, message });
+                return;
             }
 
 
 
             await prisma.giveaway.update({
-                where: { id: parseInt(id) },
+                where: { id },
                 data: { users },
             });
 
@@ -293,46 +317,60 @@ export default new class Giveaway {
     }
 
     async reRoll(req: Request, res: Response) {
-        const { id } = req.params;
+        const id = ValidNumber(req.params.id);
 
+        if (!id) {
+            res.status(400).json({ error: "El id debe ser un número" });
+            return;
+        }
         try {
             const giveaway = await prisma.giveaway.findUnique({
-                where: { id: parseInt(id) }
+                where: { id }
             });
 
+            // Si no se encuentra o no ha terminado el sorteo, respondemos y salimos
             if (!giveaway || !giveaway.end) {
                 res.status(404).json({ error: "Sorteo no encontrado o no finalizado" });
                 return
-            };
+            }
 
-            const winners = this.getWinners(giveaway);
+            // Calculamos los ganadores antes de actualizar o enviar respuesta
+            const winners = give.getWinners(giveaway);
 
             if (!winners) {
-                res.status(200).json({ action: "NO_WINNERS_COMPLET", message: "No hubo usuarios necesarios para el sorteo", winners })
+
+                res.status(200).json({
+                    action: "NO_WINNERS_COMPLET",
+                    message: "No hubo usuarios necesarios para el sorteo",
+                    winners
+                });
                 return;
             }
 
+            // Actualizamos la base de datos antes de las operaciones de mensajes
             await prisma.giveaway.update({
-                where: { id: parseInt(id) },
+                where: { id },
                 data: { winners }
             });
 
+            // Construimos el mensaje y lo publicamos, pero no esperamos la respuesta
             const msg = await i18n(giveaway.lang, "end", {
-                winners: winners.join(", "),
+                winners: winners.map(w => `<@${w}>`).join(", "),
                 prize: giveaway.prize
             });
 
-            try {
-                await Message.create(giveaway.channel, {
-                    content: msg
-                }, giveaway);
+            // Ejecutamos de manera independiente (sin await) las funciones de mensaje
+            Message.create(giveaway.channel, { content: msg }, giveaway).catch((err) =>
+                console.error("Error en Message.create:", err)
+            );
 
-                if (giveaway.message) await Message.edit(giveaway.channel, giveaway.message, {
+            if (giveaway.message) {
+                Message.edit(giveaway.channel, giveaway.message, {
                     embeds: [
                         embed(
                             giveaway.prize,
                             await EmbedDescription({
-                                winners: winners.join(", "),
+                                winners: winners.map(w => `<@${w}>`).join(", "),
                                 lang: giveaway.lang,
                                 entries: giveaway.users.length,
                                 id: giveaway.id,
@@ -340,26 +378,24 @@ export default new class Giveaway {
                             }),
                             "#1100ff"
                         )
-                    ],
-                })
-
-            } catch (error) {
-                if (error instanceof Error) {
-                    logger.errorWithType("Axios", error.stack || error.message);
-                    res
-                        .status(500)
-                        .json({ error: "Error al enviar el mensaje de sorteo" })
-                    return
-                }
+                    ]
+                }).catch((err) => console.error("Error en Message.edit:", err));
             }
 
-            res.status(200).json({ message: "Sorteo re-rolleado", winners })
+            // Enviamos la respuesta final
+            res.status(200).json({ message: "Sorteo re-rolleado", winners });
+
         } catch (error) {
-            res
-                .status(500)
-                .json({ error: "Error al re-rollear el sorteo" })
+            console.error("Error en reRoll:", error);
+            // Si ocurre un error inesperado, respondemos con el código 500
+            res.status(500).json({ error: "Error al procesar la solicitud de re-rolleo" });
         }
     }
+
+
+
+
+
 
     async finish(id: number) {
         const giveaway = await prisma.giveaway.findUnique({
@@ -367,7 +403,7 @@ export default new class Giveaway {
         });
 
         if (giveaway && giveaway.active) {
-            const winner = this.getWinners(giveaway)
+            const winner = give.getWinners(giveaway)
 
             if (!winner) {
                 await Message.create(giveaway.channel, {
@@ -417,13 +453,22 @@ export default new class Giveaway {
     };
 
     async guild(req: Request, res: Response) {
-        const { id } = req.params;
+        const id = req.params.id;
         const { active, limit } = req.query;
+
+        if (!id) {
+            res.status(400).json({ error: "El id debe ser un número" });
+            return;
+        }
+        let Bactive = ValidBoolean(active);
+
+        let Nlimit = ValidNumber(limit);
+        if (!Nlimit) Nlimit = 10;
 
         try {
             const giveaways = await prisma.giveaway.findMany({
-                where: { guild: id, active: Boolean(active) },
-                take: limit ? parseInt(limit as string) : 10
+                where: { guild: id, active: Bactive },
+                take: Nlimit
             });
 
             res.status(200).json(giveaways)
@@ -475,3 +520,26 @@ async function EmbedDescription(data: {
         return undefined
     }
 }
+
+function ValidNumber(value?: Request["query"][0]) {
+    if (typeof value != "string") return false;
+    try {
+        if (!value) return false;
+        const n = parseInt(value);
+        if (isNaN(n)) return false;
+        return n
+    } catch (error) {
+        return false;
+    }
+}
+
+function ValidBoolean(value?: Request["query"][0]) {
+    if (typeof value != "string") return undefined;
+    if (!value) return undefined;
+    if (value.includes("true")) return true;
+    if (value.includes("false")) return false;
+    return undefined;
+}
+
+
+export default give;

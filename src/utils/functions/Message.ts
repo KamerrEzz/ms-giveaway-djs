@@ -2,6 +2,7 @@ import { RESTGetAPIChannelMessageResult, RESTPostAPIChannelMessageJSONBody, REST
 import axios from "../services/axios";
 import { APIActionRowComponent, APIButtonComponent, APIButtonComponentWithCustomId, APIEmbed, APIEmbedField, APIMessageActionRowComponent, APIMessageComponentEmoji, APIPartialEmoji, ButtonStyle } from "discord-api-types/v10";
 import { Giveaway } from "@prisma/client";
+import { discord } from "../assets/env";
 
 
 export default new class Message {
@@ -67,6 +68,11 @@ export function embed(title?: string, description?: string, color?: `#${string}`
         description,
         color: parseColor(color),
         timestamp: new Date().toISOString(),
+        image: discord.imagen ?
+            {
+                url: discord.imagen
+            }
+            : undefined,
         ...others
     }
 }
