@@ -1,0 +1,11 @@
+{
+    "start": "🎉 ¡El sorteo ha comenzado! 🎁 ¡Únete ahora para tener la oportunidad de ganar `{{prize}}`!",
+    "end": "🎊 ¡El ganador del sorteo es {{winners}}! 🎉 ¡Has ganado `{{prize}}`! 🎁",
+    "pause": "⏸️ El sorteo está en pausa. ¡Vuelve pronto! ⌛",
+    "cancel": "❌ El sorteo ha sido cancelado. 😔",
+    "reStart": "🔄 ¡El sorteo ha reiniciado! 🎁 ¡Únete ahora para tener la oportunidad de ganar `{{prize}}`!",
+    "noWinners": "😟 Lamentablemente, no hubo participantes en el sorteo. ¡Mejor suerte la próxima vez! 🍀",
+    "notEnoughParticipants": "😕 Lamentablemente, no hubo suficientes participantes para seleccionar ganadores. ¡Inténtalo de nuevo pronto! 🔄",
+    "embedDescription": "🆔 ID: {{id}}\n⏳ Termina: <t:{{delay}}:R> (<t:{{delay}}>)\n🔢 Participantes: {{entries}}\n🎉 Ganadores: {{winners}}",
+    "embedDescriptionPaused": "🆔 ID: {{id}}\n⏸ Pausado\n🔢 Participantes: {{entries}}\n🎉 Ganadores: {{winners}}"
+}

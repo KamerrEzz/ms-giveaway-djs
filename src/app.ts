@@ -15,4 +15,5 @@ if(!discord.token) {
 }
 
 
-
+process.on("unhandledRejection", (reason, promise) => console.error(reason, "Unhandled Rejection at Promise", promise));
+process.on("uncaughtException", (error, origin) => console.error(error, "Uncaught Exception thrown", origin));

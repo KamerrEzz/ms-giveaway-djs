@@ -8,8 +8,8 @@ describe("Test Giveaway", () => {
     it("Create a giveaway", async () => {
         try {
             const response = await axios.post("/giveaway", {
-               guild: "739306480586588241",
-               channel: "921170433800294460",
+               guild: "837978835856785478",
+               channel: "1236155843854991453",
                prize: "rol dos",
                winnersCount: 1,
                delay: 60*1,

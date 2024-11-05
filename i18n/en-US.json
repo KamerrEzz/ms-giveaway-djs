@@ -1,0 +1,11 @@
+{
+    "start": "🎉 The giveaway has started! 🎁 Join now for a chance to win `{{prize}}`!",
+    "end": "🎊 The winner of the giveaway is {{winners}}! 🎉 You've won `{{prize}}`! 🎁",
+    "pause": "⏸️ The giveaway is paused. Come back soon! ⌛",
+    "cancel": "❌ The giveaway has been canceled. 😔",
+    "reStart": "🔄 The giveaway has restarted! 🎁 Join now for a chance to win `{{prize}}`!",
+    "noWinners": "😟 Unfortunately, there were no participants in the giveaway. Better luck next time! 🍀",
+    "notEnoughParticipants": "😕 Unfortunately, there weren't enough participants to select the winners. Try again soon! 🔄",
+    "embedDescription": "🆔 ID: {{id}}\n⏳ Ends: <t:{{delay}}:R> (<t:{{delay}}>)\n🔢 Entries: {{entries}}\n🎉 Winners: {{winners}}",
+    "embedDescriptionNotDelay": "🆔 ID: {{id}}\n🔢 Entries: {{entries}}\n🎉 Winners: {{winners}}"
+}
