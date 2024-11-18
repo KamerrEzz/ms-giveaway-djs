@@ -1,25 +1,12 @@
 FROM node:18
-
-ARG DATABASE_URL
-ARG REDIS_HOST
-ARG REDIS_PASSWORD
-ARG REDIS_USERNAME
-
-ENV DATABASE_URL=${DATABASE_URL}
-ENV REDIS_HOST=${REDIS_HOST}
-ENV REDIS_PASSWORD=${REDIS_PASSWORD}
-ENV REDIS_USERNAME=${REDIS_USERNAME}
-
 WORKDIR /usr/src/app
-
 COPY package*.json ./
-
 RUN npm install
-
 COPY . .
 
-RUN npm run build
+ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /usr/src/app/wait-for-it.sh
+RUN chmod +x /usr/src/app/wait-for-it.sh
 
 EXPOSE 3000
-
-CMD ["npm", "start"]
+RUN npx prisma generate
+CMD ["sh", "-c", "./wait-for-it.sh db:5432 -- npx prisma db push && npm run start:build"]
