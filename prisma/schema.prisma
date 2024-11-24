@@ -14,6 +14,7 @@ model Giveaway {
   message String? // Mensaje del sorteo
   guild   String // ID del servidor o gremio
   active  Boolean @default(true) // Estado del sorteo (activo/inactivo)
+  isRole String?
 
   // Detalles del sorteo
   prize        String // Premio del sorteo

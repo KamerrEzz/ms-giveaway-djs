@@ -1,7 +1,7 @@
 import { Giveaway } from "@prisma/client";
 import Joi from "joi";
 
-const GiveawayPost = Joi.object<Pick<Giveaway, "guild" | "channel" | "users" | "prize" | "delay" | "winnersCount" | "active" | "lang">>({
+const GiveawayPost = Joi.object<Pick<Giveaway, "guild" | "channel" | "users" | "prize" | "delay" | "winnersCount" | "active" | "lang" | "isRole">>({
     guild: Joi.string().required(),
     channel: Joi.string().required(),
     users: Joi.array().items(Joi.string()).optional(),
@@ -10,6 +10,7 @@ const GiveawayPost = Joi.object<Pick<Giveaway, "guild" | "channel" | "users" | "
     lang: Joi.string(),
     winnersCount: Joi.number().required(),
     active: Joi.boolean().required(),
+    isRole: Joi.string().optional(),
 })
 
 const GiveawayPut = Joi.object<Pick<Giveaway, "channel" | "users" | "prize" | "delay" | "winnersCount" | "active">>({
@@ -23,7 +24,8 @@ const GiveawayPut = Joi.object<Pick<Giveaway, "channel" | "users" | "prize" | "d
 
 
 const GiveawayJoinValid = Joi.object({
-    user: Joi.string()
+    user: Joi.string(),
+    roles: Joi.array().items(Joi.string()).optional()
 }).required();
 
 

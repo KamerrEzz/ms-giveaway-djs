@@ -37,7 +37,7 @@ const give = new class Giveaway {
     }
 
     async post(req: Request, res: Response, next: NextFunction) {
-        const { channel, users, prize, delay, guild, winnersCount, lang } = req.body;
+        const { channel, users, prize, delay, guild, winnersCount, lang, isRole } = req.body;
 
 
         try {
@@ -49,6 +49,7 @@ const give = new class Giveaway {
                     delay,
                     lang,
                     guild,
+                    isRole,
                     active: true,
                     winnersCount
                 },
@@ -239,7 +240,7 @@ const give = new class Giveaway {
 
     async join(req: Request, res: Response) {
         const id = ValidNumber(req.params.id);
-        const body = req.body as { user: string };
+        const body = req.body as { user: string, roles?: string[] };
         if (!id) {
             res.status(400).json({ action: "Error", message: "El id debe ser un número" });
             return;
@@ -262,6 +263,11 @@ const give = new class Giveaway {
 
             if (giveaway.paused) {
                 res.status(404).json({ action: "Paused", message: "Sorteo pausado" });
+                return
+            }
+
+            if(giveaway.isRole && !body.roles?.includes(giveaway.isRole)) {
+                res.status(404).json({ action: "NoRole", message: "No tiene el rol" })
                 return
             }
 
